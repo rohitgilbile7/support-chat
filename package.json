@@ -1,0 +1,22 @@
+{
+  "name": "meteorchat",
+  "version": "1.0.0",
+  "description": "description",
+  "main": "meteor run",
+  "scripts": {},
+  "author": "Rohit",
+  "license": "ISC",
+  "dependencies": {
+    "babel-runtime": "^6.23.0",
+    "bcrypt": "^1.0.2",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rohitgilbile7/support-chat"
+  },
+  "keywords": [
+    "chat"
+  ]
+}

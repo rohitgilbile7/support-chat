@@ -1,0 +1,454 @@
+<head>
+  <title>chatDemo</title>
+  <!--<link rel="stylesheet" href="/css/style.css" /> -->
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel='stylesheet prefetch' href='https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css'>
+  <link rel="stylesheet" href="css/chat.css">
+  <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous"> -->
+  <link href="css/emoji.css" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+
+    <!-- Screen share start -->
+      <script src="js/RTCMultiConnection.js"> </script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.js"> </script>
+       <!-- capture screen from any HTTPs domain! -->
+       <script src="https://cdn.webrtc-experiment.com:443/getScreenId.js"></script>
+       <script src="https://cdn.firebase.com/js/client/2.2.0/firebase.js"></script>
+    <!-- Screen share ends -->
+</head>
+<body>
+  <div class="container clearfix">
+
+    {{>main}}
+  </div>
+
+  <script>
+  //video calling
+
+
+  //ends video calling
+  window.addEventListener('beforeunload', function() {
+    Array.prototype.slice.call(document.querySelectorAll('button')).forEach(function(button) {
+        button.disabled = false;
+    });
+}, false);
+      // ......................................................
+      // .......................UI Code........................
+      // ......................................................
+      // document.getElementById('open-room').onclick = function() {
+      //     disableInputButtons();
+      //     connection.open(document.getElementById('room-id').value, function() {
+      //         showRoomURL(connection.sessionid);
+      //     });
+      // };
+      // document.getElementById('join-room').onclick = function() {
+      //     disableInputButtons();
+      //     connection.join(document.getElementById('room-id').value);
+      // };
+      // document.getElementById('open-or-join-room').onclick = function() {
+      //     disableInputButtons();
+      //     connection.openOrJoin(document.getElementById('room-id').value, function(isRoomExists, roomid) {
+      //         if(!isRoomExists) {
+      //             showRoomURL(roomid);
+      //         }
+      //     });
+      // };
+      // ......................................................
+      // ..................RTCMultiConnection Code.............
+      // ......................................................
+
+  </script>
+</body>
+
+<template name="main">
+    {{# if userroles role }}
+        {{> sidebar }}
+    {{else}}
+        {{>userSidebar}}
+    {{/if}}
+  {{>messages}}
+</template>
+<template name="audioTemplate">
+  <div class="modal ">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title">Audio call</h4>
+          <a href="javascript:void(0)"  style="flot:right"  class="closeAudiocall btn-danger"> Close </a>
+        </div>
+        <div class="modal-body">
+
+          <div class="generateAudioKey">
+              <label>Key: </label>
+              <input type="text" id="audioKey" placeholder="Enter key..." />
+              <input type="button" value="Submit" id="submitKey" />
+              <input type="button" value="Join" id="joinKey" />
+          </div>
+          <div class="audioDiv" style="display:none">
+            <video autoplay controls></video>
+             <p>
+                 <button id="capture">Start</button>
+                 <button id="stop">Stop</button>
+             </p>
+           </div>
+    </div>
+    </div>
+    </div>
+    </div>
+</template>
+
+<template name="videoTemplate">
+  <div class="modal ">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title">Video call</h4>
+          <a href="javascript:void(0)"  style="flot:right"  class="closeVideocall btn-danger"> Close </a>
+        </div>
+        <div class="modal-body">
+
+          <div class="generatevideoKey">
+              <label>Key: </label>
+              <input type="text" id="videoKey" placeholder="Enter key..." />
+              <input type="button" value="Submit" id="submitVideoKey" />
+              <input type="button" value="Join" id="joinVideoKey" />
+          </div>
+          <div id="videocontainer" style="display:none">
+            <!-- note the 'autoplay' -->
+            <span>Your friend: <br> <video id="theirVideo" class="theirVideo" autoplay height="250" width="250"></video></span>
+            <span>: You <br> <video id="myVideo" muted="true" class="myVideo" autoplay height="250" width="250"></video></span>
+
+
+
+            <p><a href="javascript:void(0)" id="endCall">End Call</a></p>
+
+          </div>
+    </div>
+    </div>
+    </div>
+    </div>
+</template>
+
+<template name="screenShareTemplate">
+  <div class="modal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title">Share Screen</h4>
+          <a href="javascript:void(0)"  style="flot:right"  class="closeshareScreen btn-danger"> Close </a>
+        </div>
+        <div class="modal-body">
+        <section class="experiment">
+              <div class="make-center">
+                  <h3>Scree share</h3>
+                  <input type="text" id="room-id" value="abcdef">
+                  <button id="open-room">Open Room</button>
+                  <button id="join-room">Join Room</button>
+                  <button id="open-or-join-room" style="display:none">Auto Open Or Join Room</button>
+                  <div id="room-urls" style="text-align: center;display: none;background: #F1EDED;margin: 15px -10px;border: 1px solid rgb(189, 189, 189);border-left: 0;border-right: 0;"></div>
+              </div>
+              <div id="videos-container"></div>
+        <!-- (Install <a href="https://chrome.google.com/webstore/detail/screen-capturing/ajhifddimkapgcifgcodmmfdlknahffk" target="_blank">Chrome</a> / or / <a href="https://www.webrtc-experiment.com/store/firefox-extension/enable-screen-capturing.xpi" target="_blank">Firefox</a> extension) - Extensions are <a href="https://github.com/muaz-khan?tab=repositories">open-sourced</a>! -->
+          </section>
+        </div>
+    </div>
+  </div>
+ </div>
+</template>
+
+
+<template name="userSidebar">
+  <div class="people-list " id="people-list">
+    <!-- <div class="search">
+      <input type="text" placeholder="search" />
+      <i class="fa fa-search"></i>
+    </div> -->
+    <div id="sidebar-wrapper1">
+    <ul class="list onlUsers">
+    {{# if currentUser }}
+      {{#each onlineSupport}}
+          <li class="clearfix user"  id="{{_id}}">
+            <!-- <img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/195612/chat_avatar_01.jpg" alt="avatar" data-name="{{username}}" /> -->
+            <div class="about">
+              <div class="name" data-name="{{username}}">{{username}}</div>
+              <div class="status">
+                <i class="fa fa-circle online" data-name="{{username}}"></i> online <br/>
+                  <p style="display:none">Your id: <span id="myPeerId" class="myPeerId">...</span></p> <br/>
+                    <a href="javascript:void(0)"   id="makeCall">Video Call</a><br/>
+                  <a href="javascript:void(0)" class="audioCall"> Audio Call</a><br/>
+                  <a href="javascript:void(0)" class="shareScreen"> Share Screen</a>
+
+                 <!-- <a href="javascript:void(0)" class="userIDLink">Video Call</a> -->
+              </div>
+            </div>
+          </li>
+        {{/each}}
+        {{else}}
+          <h3>Please login to chat</h3>
+      {{/if}}
+    </ul>
+  </div>
+  </div>
+</template>
+<template name="sidebar">
+  <div class="people-list " id="people-list">
+    <!-- <div class="search">
+      <input type="text" placeholder="search" />
+      <i class="fa fa-search"></i>
+    </div> -->
+    <div id="sidebar-wrapper1">
+    <ul class="list onlUsers">
+    {{# if currentUser }}
+      {{#each onlusr}}
+          <li class="clearfix user" id="{{_id}}">
+            <!-- <img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/195612/chat_avatar_01.jpg" alt="avatar" class="{{username}}" data-name="{{username}}" /> -->
+            <div class="about">
+              <div class="name" data-name="{{username}}">{{username}}</div>
+              <div class="status">
+                <i class="fa fa-circle online" data-name="{{username}}"></i> online <br/>
+                 <p style="display:none">Your sidebar id: <span id="myPeerId" class="myPeerId">...</span>++-</p>
+
+                 <a href="javascript:void(0)"  id="makeCall">Video Call </a> <br/>
+                 <a href="javascript:void(0)" class="audioCall"> Audio Call </a> <br/>
+                 <a href="javascript:void(0)" class="shareScreen"> Share Screen</a>
+              </div>
+            </div>
+          </li>
+        {{/each}}
+        {{else}}
+          <h3>Please login to chat</h3>
+      {{/if}}
+    </ul>
+  </div>
+  </div>
+</template>
+
+
+
+<template name="chat">
+    <div class="col-sm-9 message_section">
+      <div class="row">
+        <div class="new_message_head">
+          <div class="pull-left"><button><i class="fa fa-plus-square-o" aria-hidden="true"></i> New Message</button></div>
+            <div class="pull-right">
+              {{> loginButtons align="right"}}
+            </div>
+    </div><!--new_message_head-->
+  <div class="chat_area" id="chat_area">
+  <ul class="list-unstyled">
+    {{#each msgs}}
+    <li class="left clearfix   {{#if equals currentUser.username name }} admin_chat {{/if}}">
+      <span class="chat-img1 {{#if equals currentUser.username name }}pull-right {{else}} pull-left  {{/if}} chatUname">
+        {{name}}
+      </span>
+      <div class="chat-body1 clearfix">
+        {{#if image}}
+          {{#each stringToArray image}}
+                <a href="{{this}}" target="_blank"> <img src="{{this}}" height="100" width="100" /> </a>
+            {{/each}}
+        {{/if}}
+        <p> <span class="usrMessage"> {{text}} </span>
+          <div class="pull-right">
+            <div class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fa fa-cogs" aria-hidden="true"></i><span class="caret"></span>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenu1">
+                <li class="copyText"><a href="javascript:void(0)">Copy Text</a></li>
+                <li class="sendinEmail" data-name="{{name}}"><a class="{{name}}" href="javascript:void(0)" >Send In Email</a></li>
+                <!-- <li class="replyTo" ><a href="javascript:void(0)" >Reply</a></li> -->
+              </ul>
+            </div>
+          </div>
+        </p>
+        <p class="pull-right"> {{timeFormat createdAt}}</p>
+        <div class="chat_time pull-right"></div>
+      </div>
+    </li>
+    {{/each}}
+  </ul>
+</div><!--chat_area-->
+<div class="message_write">
+  <div class="filecontainer">
+    <span class="select-wrapper">
+      <input type="file" name="image_src[]" multiple class="file-uploads2" id="image_src" />
+    </span>
+    <div class="file" id="file" style="display:none" > </div>
+	   <span class="emailConversation" title="Email conversation"> </span>
+    <textarea class="form-control" id="message2" placeholder="type a message"></textarea>
+    <div class="clearfix"></div><br/>
+    <div id="imageName"> </div>
+
+    <input type="button" name="send" id="sendMessage" class="pull-right btn btn-success" value="Send" />
+  </div>
+
+</div>
+</div>
+</div>
+</template>
+
+
+<template name="messages">
+  <div class="chat">
+    <div class="chat-header clearfix">
+      <img src="" class="chat-avatar" alt="avatar" style="display:none" />
+
+      <div class="chat-about">
+        <div class="chat-with">
+
+        </div>
+        <div class="chat-num-messages"></div>
+      </div>
+      <!-- <i class="fa fa-star"></i> -->
+        {{> loginButtons align="right"}}
+    </div> <!-- end chat-header -->
+
+    <div class="chat-history">
+      <ul>
+        {{#each msgs}}
+          {{#if equals currentUser.username name }}
+            <li class="clearfix">
+                <div class="message-data align-right">
+                  <span class="message-data-time" >{{timeFormat createdAt}}</span> &nbsp; &nbsp;
+                  <span class="message-data-name" >{{name}}</span> <i class="fa fa-circle me"></i>
+                  <span class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <i class="fa fa-cogs" aria-hidden="true"></i><span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenu1">
+                      <li class="copyText" data-message="{{text}}"><a href="javascript:void(0)" data-message="{{text}}">Copy Text</a></li>
+                      <li class="sendinEmail" data-name="{{name}}" data-message="{{text}}"><a class="{{name}}" href="javascript:void(0)" data-message="{{text}}" >Send In Email</a></li>
+                      <!-- <li class="replyTo" ><a href="javascript:void(0)" >Reply</a></li> -->
+                    </ul>
+                  </span>
+                </div>
+                <div class="message other-message float-right">
+                  {{#if image}}
+                    {{#each stringToArray image }}
+                      {{#if Imageequals this  }}
+                          <a href="{{this}}" target="_blank"> <img src="{{this}}" class="image-logo" /> </a>
+                        {{/if}}
+                      {{/each}}
+                  {{/if}}
+                 <div class="sms-text">{{text}}</div>
+                </div>
+              </li>
+            {{else}}
+              <li>
+                <div class="message-data">
+                  <span class="message-data-name"><i class="fa fa-circle online"></i> {{name}}</span>
+                  <span class="message-data-time">{{timeFormat createdAt}}</span>
+                  <span class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <i class="fa fa-cogs" aria-hidden="true"></i><span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-left" aria-labelledby="dropdownMenu1">
+                      <li class="copyText"  data-message="{{text}}"><a href="javascript:void(0)" data-message="{{text}}">Copy Text</a></li>
+                      <li class="sendinEmail" data-name="{{name}}" data-message="{{text}}"><a class="{{name}}" href="javascript:void(0)" data-message="{{text}}">Send In Email</a></li>
+                      <!-- <li class="replyTo" ><a href="javascript:void(0)" >Reply</a></li> -->
+                    </ul>
+                  </span>
+                </div>
+                <div class="message my-message">
+                  {{#if image}}
+                    {{#each stringToArray image}}
+                        {{#if Imageequals this  }}
+                          <a href="{{this}}" target="_blank"> <img src="{{this}}" class="image-logo" /> </a>
+                        {{/if}}
+                      {{/each}}
+                  {{/if}}
+                  <div class="sms-text">{{text}}</div>
+                </div>
+              </li>
+            {{/if}}
+
+        {{/each}}
+      </ul>
+
+    </div> <!-- end chat-history -->
+
+    <div class="chat-message clearfix">
+      <textarea name="message-to-send" class="" data-emojiable="true" id="message" placeholder ="Type your message" rows="3"></textarea>
+
+      <!-- <i class="fa fa-file-o"></i> &nbsp;&nbsp;&nbsp;
+      <i class="fa fa-file-image-o" ></i> -->
+    {{# if currentUser }}
+        <div id="imageName"> </div>
+        <i class="fa fa-envelope emailConversation" aria-hidden="true"></i>
+        <span class="select-wrapper">
+          <input type="file" name="image_src[]" multiple class="file-uploads" id="image_src" />
+        </span>
+        <div class="file" id="file" style="display:none" > </div>
+    {{/if}}
+      <button id="sendMessage">Send</button>
+
+    </div> <!-- end chat-message -->
+
+  </div> <!-- end chat -->
+
+
+</template>
+
+<template name="sendConversation">
+	<div class="modal ">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title">Email Chat conversation</h4>
+        </div>
+        <div class="modal-body">
+          <div style="text-align:center">
+		  	<form class="" method="POST">
+			<div class="form-group">
+				<label for="email">Send Email To:</label>
+				<input type="email" name="email" id="emailTo" class="form-control" >
+			</div>
+			<button type="button" id="sendChatConversation" class="btn btn-success">Send</button>
+			<button type="button" class="closeSendChat btn-danger">Cancel</button>
+			</form>
+		   </div>
+		</div>
+		</div>
+		</div>
+    </div>
+</template>
+
+<template name="chatModal">
+  <div class="modal ">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title">{{getStatus}}</h4>
+        </div>
+        <div class="modal-body">
+          <div style="text-align:center">
+            <video width="100%" id="videoChatAnswerVideo" poster="https://d13yacurqjgara.cloudfront.net/users/82092/screenshots/1073359/spinner.gif"></video>
+            <video style="width:250px" id="videoChatCallerVideo"></video>
+          </div>
+          {{#if incomingPhoneCall}}
+          <div class="text-center">
+            <h1>{{getCallerName}} is calling you!</h1>
+          </div>
+          {{/if}}
+        </div>
+        <div class="modal-footer">
+          {{#if incomingPhoneCall}}
+          <button type="button" id="answerCall" class="btn btn-success">Answer</button>
+          <button type="button" id="ignoreCall" class="btn btn-danger">Ignore</button>{{else}}
+          <button type="button" class="btn btn-danger" id="closeChat">End Call</button>{{/if}}
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template name="modal_loading">
+  <div class="modal fade">
+    <div class="modal-dialog">
+      <div class="modal-content" style="text-align:center">
+        <i class="fa fa-cog fa-spin fa-3x fa-fw"></i>
+        <span class="sr-only">Loading...</span>
+      </div>
+    </div>
+  </div>
+</template>
